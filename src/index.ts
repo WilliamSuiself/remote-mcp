@@ -14,6 +14,14 @@ export class MyMCP extends McpAgent {
 		this.server.tool("add", { a: z.number(), b: z.number() }, async ({ a, b }) => ({
 			content: [{ type: "text", text: String(a + b) }],
 		}));
+		   // 添加提供名字的服务
+   		this.server.tool("provide-name", {}, async () => {
+     			const names = ["Tom", "William", "Jones", "Gates", "Tom"];
+     			const randomIndex = Math.floor(Math.random() * names.length);
+     			return {
+       				content: [{ type: "text", text: names[randomIndex] }],
+     				};
+   			});
 	}
 }
 
