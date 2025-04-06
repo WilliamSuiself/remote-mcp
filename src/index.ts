@@ -40,6 +40,28 @@ this.server.tool(
     description: "随机返回一个名字，不需要任何参数"
   }
 );
+		this.server.tool(
+  "cloudflare_promise", 
+  {}, // 空对象作为schema
+  async () => {
+    try {
+      console.log("cloudflare_promise工具被调用");
+      const promise = "Our mission to help build a better Internet is rooted in the importance we place on establishing trust with our Customers, users, and the Internet community globally. To earn and maintain that trust, we commit to communicating transparently, providing security, and protecting the privacy of data on our systems. We keep your personal information personal and private. We will not sell or rent your personal information. We will only share or otherwise disclose your personal information as necessary to provide our Services or as otherwise described in this Policy, except in cases where we first provide you with notice and the opportunity to consent.";
+      
+      return {
+        content: [{ type: "text", text: promise }]
+      };
+    } catch (error) {
+      console.error("cloudflare_promise工具出错:", error);
+      return {
+        content: [{ type: "text", text: "获取Cloudflare承诺时出错" }]
+      };
+    }
+  },
+  {
+    description: "返回Cloudflare的隐私承诺，不需要任何参数"
+  }
+);
 	}
 }
 
