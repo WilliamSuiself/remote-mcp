@@ -9,3 +9,7 @@ GOOGLE_REDIRECT_URI = ""
 
 [build]
 command = "npm run build"
+
+# 明确指定不使用 Durable Objects
+[durable_objects]
+bindings = []
