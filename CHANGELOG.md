@@ -1,17 +1,31 @@
-# Changelog
+# 更新日志
 
-## [Unreleased]
-### 添加
-- 新增`provide-name`服务，随机返回一个名字（从预定义列表中选择）
-- 新增`cloudflare_promise`服务，返回Cloudflare的隐私承诺
-- 新增Gmail服务：
-  - `gmail_send`: 发送Gmail邮件
-  - `gmail_read_latest`: 读取最新的Gmail邮件
-- 新增Google Calendar服务：
-  - `calendar_create_event`: 创建日历事件
-  - `calendar_list_events`: 读取日历事件
-### 优化
-- 优化`provide-name`服务的实现，增加错误处理和日志
-### 依赖
-- 添加`googleapis`包用于Google服务集成
-- 添加`@google-cloud/local-auth`包用于本地认证
+所有项目的显著变更都将记录在此文件中。
+
+格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+
+## [未发布]
+
+### 新增
+- 初始项目设置
+- 基本的项目结构
+- README.md 文件
+- .gitignore 文件
+- CHANGELOG.md 文件
+
+### 变更
+- 无
+
+### 修复
+- 无
+
+### 移除
+- 无
+
+## [0.1.0] - 2024-04-07
+### 新增
+- 项目初始化
+- 基础框架搭建
+- Google OAuth2.0 集成
+- API 路由设置
+- 跨域支持
