@@ -6,3 +6,6 @@ compatibility_date = "2024-04-07"
 GOOGLE_CLIENT_ID = ""
 GOOGLE_CLIENT_SECRET = ""
 GOOGLE_REDIRECT_URI = ""
+
+[build]
+command = "npm run build"
