@@ -1,15 +1,16 @@
-name = "remote-mcp-server"
+name = "remote-mcp"
 main = "src/index.ts"
 compatibility_date = "2024-04-07"
-
-[vars]
-GOOGLE_CLIENT_ID = ""
-GOOGLE_CLIENT_SECRET = ""
-GOOGLE_REDIRECT_URI = ""
 
 [build]
 command = "npm run build"
 
-# 明确指定不使用 Durable Objects
-[durable_objects]
-bindings = []
+[build.upload]
+format = "modules"
+main = "./index.mjs"
+dir = "dist"
+
+[env.production]
+name = "remote-mcp"
+route = ""
+workers_dev = true
