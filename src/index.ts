@@ -1,11 +1,10 @@
 import app from "./app";
-import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import OAuthProvider from "@cloudflare/workers-oauth-provider";
 import { google } from 'googleapis';
 
-export class MyMCP extends McpAgent {
+export class MyMCP {
 	server = new McpServer({
 		name: "Demo",
 		version: "1.0.0",
@@ -172,15 +171,20 @@ export class MyMCP extends McpAgent {
 			}
 		);
 	}
+
+	static mount(path: string) {
+		return async (request: Request) => {
+			const mcp = new MyMCP();
+			await mcp.init();
+			return mcp.server.handle(request);
+		};
+	}
 }
 
 // Export the OAuth handler as the default
 export default new OAuthProvider({
 	apiRoute: "/sse",
-	// TODO: fix these types
-	// @ts-ignore
 	apiHandler: MyMCP.mount("/sse"),
-	// @ts-ignore
 	defaultHandler: app,
 	authorizeEndpoint: "/authorize",
 	tokenEndpoint: "/token",
