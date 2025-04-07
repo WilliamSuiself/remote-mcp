@@ -193,4 +193,11 @@ app.get('/tools', (c) => {
   return c.json(toolList);
 });
 
-export default app;
+// 健康检查路由
+app.get('/health', (c) => {
+  return c.json({ status: 'ok' });
+});
+
+export default {
+  fetch: app.fetch,
+};
