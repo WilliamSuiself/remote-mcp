@@ -1,54 +1,57 @@
-# Remote MCP Server on Cloudflare
+# Remote MCP
 
-Let's get a remote MCP server up-and-running on Cloudflare Workers complete with OAuth login!
+Remote MCP 是一个基于 Cloudflare Workers 的远程控制面板服务。
 
-## Available MCP Services
-* **add** - 提供简单的加法运算功能
-* **provide-name** - 随机返回一个名字（从预定义列表："Tom"、"William"、"Jones"、"Gates"、"Tom"中选择）
-* **cloudflare_promise** - 返回Cloudflare的隐私承诺，不需要任何参数
+## 功能特点
 
-### Gmail Services
-* **gmail_send** - 发送Gmail邮件
-  - 参数：
-    - to: 收件人邮箱地址
-    - subject: 邮件主题
-    - message: 邮件内容
-* **gmail_read_latest** - 读取最新的Gmail邮件
-  - 参数：
-    - count: (可选) 要读取的邮件数量，默认为5
+- 基于 Cloudflare Workers 构建
+- 支持 Google OAuth2.0 认证
+- 提供 API 接口服务
+- 支持跨域请求
 
-### Google Calendar Services
-* **calendar_create_event** - 创建日历事件
-  - 参数：
-    - summary: 事件标题
-    - description: (可选) 事件描述
-    - start: 开始时间
-    - end: 结束时间
-* **calendar_list_events** - 读取日历事件
-  - 参数：
-    - days: (可选) 要读取未来几天的事件，默认为7天
+## 快速开始
 
-## 使用前准备
-1. 在[Google Cloud Console](https://console.cloud.google.com/)创建项目
-2. 启用Gmail API和Google Calendar API
-3. 创建OAuth 2.0凭据
-4. 设置授权重定向URI
-5. 配置必要的环境变量：
-   - GOOGLE_CLIENT_ID
-   - GOOGLE_CLIENT_SECRET
-
-## Develop locally
-
+1. 克隆仓库：
 ```bash
-# clone the repository
-git clone git@github.com:cloudflare/ai.git
-
-# install dependencies
-cd ai
-npm install
-
-# run locally
-npx nx dev remote-mcp-server
+git clone https://github.com/WilliamSuiself/remote-mcp.git
+cd remote-mcp
 ```
 
-You should be able to open [`http://localhost:8787/`](http://localhost:8787/) in your browser
+2. 安装依赖：
+```bash
+npm install
+```
+
+3. 本地开发：
+```bash
+npm run dev
+```
+
+4. 构建部署：
+```bash
+npm run build
+npm run deploy
+```
+
+## 环境变量
+
+项目需要以下环境变量：
+
+- `GOOGLE_CLIENT_ID`: Google OAuth 客户端 ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth 客户端密钥
+- `GOOGLE_REDIRECT_URI`: OAuth 回调 URL
+
+## 技术栈
+
+- Cloudflare Workers
+- TypeScript
+- Hono Framework
+- Google OAuth2.0
+
+## 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+## 许可证
+
+MIT License
