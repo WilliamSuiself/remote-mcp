@@ -1,28 +1,38 @@
 {
-  "name": "remote-mcp-server",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "start": "wrangler dev",
-    "build": "tsc && node build.js"
-  },
-  "dependencies": {
-    "hono": "^3.11.7",
-    "zod": "^3.24.2",
-    "googleapis": "^148.0.0",
-    "@google-cloud/local-auth": "^2.1.0",
-    "@cloudflare/workers-oauth-provider": "^0.0.2",
-    "marked": "^5.0.2"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20231218.0",
-    "typescript": "^5.8.3",
-    "wrangler": "^4.8.0",
-    "esbuild": "^0.19.0",
-    "@types/node": "^20.17.30",
-    "@types/marked": "^5.0.2"
-  }
+	"name": "remote-mcp-server",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"format": "biome format --write",
+		"lint:fix": "biome lint --fix",
+		"start": "wrangler dev",
+		"cf-typegen": "wrangler types",
+		"build": "tsc && node build.js"
+	},
+	"devDependencies": {
+		"@types/marked": "^5.0.2",
+		"@types/node": "^20.17.30",
+		"marked": "^15.0.7",
+		"typescript": "^5.8.3",
+		"workers-mcp": "^0.1.0-3",
+		"wrangler": "^4.2.0"
+	},
+	"dependencies": {
+		"@cloudflare/workers-oauth-provider": "^0.0.2",
+		"@modelcontextprotocol/sdk": "^1.9.0",
+		"@remote-mcp/server": "^0.1.0",
+		"@types/google-cloud__storage": "^1.7.2",
+		"agents": "^0.0.43",
+		"googleapis": "^148.0.0",
+		"hono": "^4.7.4",
+		"zod": "^3.24.2"
+	},
+	"description": "这是一个基于Cloudflare Worker的MCP (Model Context Protocol) 服务器，用于提供各种工具API，包括Gmail、Google Calendar等功能。该项目使用TypeScript开发，并使用@remote-mcp/server库来简化MCP服务器的实现。",
+	"main": "build.js",
+	"keywords": [],
+	"author": "",
+	"license": "ISC"
 }
