@@ -7,17 +7,18 @@
 ## [未发布]
 
 ### 新增
-- 初始项目设置
-- 基本的项目结构
-- README.md 文件
-- .gitignore 文件
-- CHANGELOG.md 文件
+- Gmail发送和读取功能
+- Google Calendar事件创建和列表查询功能
+- TypeScript类型定义完善
+- OAuth认证流程优化
 
 ### 变更
-- 无
+- 重构MCP服务处理逻辑
+- 优化错误处理机制
 
 ### 修复
-- 无
+- 修复ESM导入路径问题
+- 解决类型定义冲突
 
 ### 移除
 - 无
@@ -29,3 +30,8 @@
 - Google OAuth2.0 集成
 - API 路由设置
 - 跨域支持
+- 初始项目设置
+- 基本的项目结构
+- README.md 文件
+- .gitignore 文件
+- CHANGELOG.md 文件
