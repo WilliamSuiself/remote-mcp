@@ -1,9 +1,14 @@
 // Helper to generate the layout
 import { html, raw } from "hono/html";
 import type { HtmlEscapedString } from "hono/utils/html";
-import { marked } from "marked";
+// 使用require导入marked或者直接不使用marked
 import type { AuthRequest } from "@cloudflare/workers-oauth-provider";
-import { env } from "cloudflare:workers";
+
+// 删除原来的导入，使用声明环境变量的方式
+// import { env } from "cloudflare:workers";
+
+// 声明环境变量类型
+// declare const ASSETS: { fetch: (url: string) => Promise<Response> };
 
 // This file mainly exists as a dumping ground for uninteresting html and CSS
 // to remove clutter and noise from the auth logic. You likely do not need
@@ -175,15 +180,43 @@ export const layout = (content: HtmlEscapedString | string, title: string) => ht
 `;
 
 export const homeContent = async (req: Request): Promise<HtmlEscapedString> => {
-	// We have the README symlinked into the static directory, so we can fetch it
-	// and render it into HTML
-	const origin = new URL(req.url).origin;
-	const res = await env.ASSETS.fetch(`${origin}/README.md`);
-	const markdown = await res.text();
-	const content = await marked(markdown);
-	return html`
-		<div class="max-w-4xl mx-auto markdown">${raw(content)}</div>
-	`;
+	// 使用标准fetch替代env.ASSETS.fetch
+	try {
+		const origin = new URL(req.url).origin;
+		const res = await fetch(`${origin}/README.md`);
+		if (res.ok) {
+			const markdown = await res.text();
+			// 直接返回原文本，不使用marked解析
+			return html`
+				<div class="max-w-4xl mx-auto markdown">
+					<pre>${markdown}</pre>
+				</div>
+			`;
+		} else {
+			// 如果README.md不可用，返回默认内容
+			return html`
+				<div class="max-w-4xl mx-auto">
+					<h1 class="text-3xl font-bold mb-6">MCP Remote Auth Demo</h1>
+					<p class="mb-4">
+						欢迎使用MCP Remote Auth演示程序。此应用程序展示了如何使用Cloudflare Worker实现MCP服务器。
+					</p>
+				</div>
+			`;
+		}
+	} catch (error) {
+		console.error("无法加载README.md:", error);
+		return html`
+			<div class="max-w-4xl mx-auto">
+				<h1 class="text-3xl font-bold mb-6">MCP Remote Auth Demo</h1>
+				<p class="mb-4">
+					欢迎使用MCP Remote Auth演示程序。此应用程序展示了如何使用Cloudflare Worker实现MCP服务器。
+				</p>
+				<p class="text-red-600">
+					无法加载README.md文件: ${error instanceof Error ? error.message : String(error)}
+				</p>
+			</div>
+		`;
+	}
 };
 
 export const renderLoggedInAuthorizeScreen = async (
