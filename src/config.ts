@@ -29,6 +29,7 @@ export const APP_CONFIG = {
  */
 export const API_PATHS = {
     mcpEndpoint: '/api/mcp',
+    toolsEndpoint: '/api/tools',
     oauthGmail: '/oauth/gmail',
     oauthGmailCallback: '/oauth/gmail/callback',
     oauthCalendar: '/oauth/calendar',
