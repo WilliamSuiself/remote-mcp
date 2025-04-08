@@ -4,9 +4,10 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "remote-mcp",
+	"name": "remote-mcp-server",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-03-10",
+	"compatibility_flags": ["nodejs_compat"],
 	"migrations": [
 		{
 			"new_sqlite_classes": ["MyMCP"],
@@ -24,7 +25,7 @@
 	"kv_namespaces": [
 		{
 			"binding": "OAUTH_KV",
-			"id": "4d8fa593a3c94d7fac0c0c42de7c5fdb"
+			"id": "<ADD YOUR KV NAMESPACEID HERE>"
 		}
 	],
 	"observability": {
