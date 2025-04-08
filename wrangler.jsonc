@@ -22,12 +22,15 @@
 			}
 		]
 	},
+	/* 
+	// KV命名空间配置 - 需要在Cloudflare Dashboard中创建并获取ID
 	"kv_namespaces": [
 		{
 			"binding": "OAUTH_KV",
-			"id": "<ADD YOUR KV NAMESPACEID HERE>"
+			"id": "<YOUR KV NAMESPACE ID>"
 		}
 	],
+	*/
 	"observability": {
 		"enabled": true
 	},
