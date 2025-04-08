@@ -21,6 +21,18 @@
   - 使用Cloudflare Durable Objects存储状态
   - 支持多实例无缝扩展
 
+- **自定义工具管理**:
+  - 动态工具注册和管理
+  - 使用Map和接口实现工具调用
+
+## 更新日志
+
+最近更新（v0.4.0）:
+- 重构了MCP服务器实现，不再依赖外部库
+- 优化了工具的定义和处理方式，使用接口和Map结构管理工具
+- 添加了`/api/tools`端点用于以JSON格式列出所有可用工具
+- 优化了首页展示，动态生成工具列表
+
 ## 项目结构
 
 ```
@@ -52,8 +64,8 @@ remote-mcp-server/
 1. **克隆仓库并安装依赖**
 
 ```bash
-git clone https://github.com/WilliamSuiself/remote-mcp-server.git
-cd remote-mcp-server
+git clone https://github.com/WilliamSuiself/remote-mcp.git
+cd remote-mcp
 npm install
 ```
 
@@ -110,7 +122,7 @@ npm run deploy
    - 返回: 发送结果
 
 5. **gmailRead** - 读取Gmail邮件
-   - 参数: `count` (可选，默认5)
+   - 参数: `count` (可选，默认10)
    - 返回: 邮件列表
 
 6. **calendarCreate** - 创建日历事件
@@ -121,18 +133,17 @@ npm run deploy
    - 参数: `days` (可选，默认7)
    - 返回: 事件列表
 
-### OAuth认证
+### API端点
 
-要使用Google服务，用户需要完成OAuth认证流程：
-
-1. 访问 `/oauth/gmail` 端点
-2. 授权应用访问Gmail
-3. 重定向至回调URL处理认证
+- **`/api/mcp`** - 主要的MCP API端点，接收工具调用请求
+- **`/api/tools`** - 返回所有可用工具的列表
+- **`/oauth/gmail`** - Gmail OAuth授权端点
+- **`/oauth/gmail/callback`** - Gmail OAuth回调端点
 
 ### API请求示例
 
 ```javascript
-// 发送邮件示例
+// 调用工具示例
 fetch('https://your-worker.workers.dev/api/mcp', {
   method: 'POST',
   headers: {
@@ -149,6 +160,11 @@ fetch('https://your-worker.workers.dev/api/mcp', {
 })
 .then(response => response.json())
 .then(data => console.log(data));
+
+// 获取工具列表
+fetch('https://your-worker.workers.dev/api/tools')
+  .then(response => response.json())
+  .then(data => console.log(data.tools));
 ```
 
 ## 开发注意事项
