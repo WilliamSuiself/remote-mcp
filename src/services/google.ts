@@ -58,17 +58,17 @@ export class GoogleService {
             
             // 构建邮件内容
             const email = [
-                'Content-Type: text/plain; charset="UTF-8"\\n',
-                'MIME-Version: 1.0\\n',
-                'Content-Transfer-Encoding: 7bit\\n',
-                `To: ${to}\\n`,
-                `Subject: ${subject}\\n\\n`,
+                'Content-Type: text/plain; charset="UTF-8"\n',
+                'MIME-Version: 1.0\n',
+                'Content-Transfer-Encoding: 7bit\n',
+                `To: ${to}\n`,
+                `Subject: ${subject}\n\n`,
                 message
             ].join('');
 
             const encodedEmail = Buffer.from(email).toString('base64')
-                .replace(/\\+/g, '-')
-                .replace(/\\//g, '_')
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
                 .replace(/=+$/, '');
 
             const res = await gmail.users.messages.send({
