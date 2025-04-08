@@ -18,6 +18,7 @@
 - 更新了OAuth处理逻辑，确保正确的授权流程
 - 修复了构建脚本，确保正确生成dist/index.js文件
 - 更新了wrangler配置，指定正确的入口文件路径
+- 修复了TypeScript配置中的`noEmit: true`设置，将其改为`false`以允许生成编译后的JS文件
 
 ### 更改
 - 将McpAgent替换为McpServer作为MyMCP类的父类
