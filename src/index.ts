@@ -1,203 +1,154 @@
-import { Hono } from 'hono';
 import { z } from 'zod';
-import { google } from 'googleapis';
+import { GoogleService } from './services/google.js';
 
-const app = new Hono();
+// 参数类型定义
+const AddParamsSchema = z.object({
+  a: z.number(),
+  b: z.number(),
+});
 
-// 定义MCP工具接口
-interface Tool {
-  name: string;
-  description: string;
-  schema: z.ZodType<any>;
-  handler: (params: any) => Promise<{ content: Array<{ type: string; text: string }> }>;
+const GmailSendParamsSchema = z.object({
+  to: z.string(),
+  subject: z.string(),
+  message: z.string(),
+});
+
+const GmailReadParamsSchema = z.object({
+  count: z.number().optional(),
+});
+
+const CalendarCreateParamsSchema = z.object({
+  summary: z.string(),
+  description: z.string(),
+  start: z.string(),
+  end: z.string(),
+});
+
+const CalendarListParamsSchema = z.object({
+  days: z.number().optional(),
+});
+
+type AddParams = z.infer<typeof AddParamsSchema>;
+type GmailSendParams = z.infer<typeof GmailSendParamsSchema>;
+type GmailReadParams = z.infer<typeof GmailReadParamsSchema>;
+type CalendarCreateParams = z.infer<typeof CalendarCreateParamsSchema>;
+type CalendarListParams = z.infer<typeof CalendarListParamsSchema>;
+
+interface RequestBody {
+  tool: string;
+  params: unknown;
 }
 
-// 工具列表
-const tools: Tool[] = [
-  {
-    name: 'add',
-    description: '将两个数字相加',
-    schema: z.object({ a: z.number(), b: z.number() }),
-    handler: async ({ a, b }) => ({
-      content: [{ type: 'text', text: String(a + b) }],
-    }),
-  },
-  {
-    name: 'provide-name',
-    description: '随机返回一个名字，不需要任何参数',
-    schema: z.object({}),
-    handler: async () => {
-      try {
-        console.log('provide-name工具被调用');
-        const names = ['Tom', 'William', 'Jones', 'Gates', 'Tom'];
-        const randomIndex = Math.floor(Math.random() * names.length);
-        const selectedName = names[randomIndex];
-        console.log('返回的名字:', selectedName);
-        
-        return {
-          content: [{ type: 'text', text: selectedName }],
-        };
-      } catch (error) {
-        console.error('provide-name工具出错:', error);
-        return {
-          content: [{ type: 'text', text: '生成名字时出错' }],
-        };
-      }
-    },
-  },
-  {
-    name: 'cloudflare_promise',
-    description: '返回Cloudflare的隐私承诺，不需要任何参数',
-    schema: z.object({}),
-    handler: async () => {
-      try {
-        console.log('cloudflare_promise工具被调用');
-        const promise = 'Our mission to help build a better Internet is rooted in the importance we place on establishing trust with our Customers, users, and the Internet community globally. To earn and maintain that trust, we commit to communicating transparently, providing security, and protecting the privacy of data on our systems. We keep your personal information personal and private. We will not sell or rent your personal information. We will only share or otherwise disclose your personal information as necessary to provide our Services or as otherwise described in this Policy, except in cases where we first provide you with notice and the opportunity to consent.';
-        
-        return {
-          content: [{ type: 'text', text: promise }],
-        };
-      } catch (error) {
-        console.error('cloudflare_promise工具出错:', error);
-        return {
-          content: [{ type: 'text', text: '获取Cloudflare承诺时出错' }],
-        };
-      }
-    },
-  },
-  {
-    name: 'gmail_send',
-    description: '发送Gmail邮件，需要提供收件人、主题和内容',
-    schema: z.object({
-      to: z.string(),
-      subject: z.string(),
-      message: z.string(),
-    }),
-    handler: async ({ to, subject, message }) => {
-      try {
-        console.log('gmail_send工具被调用');
-        // TODO: 实现Gmail发送逻辑
-        return {
-          content: [{ type: 'text', text: `邮件已发送到 ${to}` }],
-        };
-      } catch (error) {
-        console.error('gmail_send工具出错:', error);
-        return {
-          content: [{ type: 'text', text: '发送邮件时出错' }],
-        };
-      }
-    },
-  },
-  {
-    name: 'gmail_read_latest',
-    description: '读取最新的Gmail邮件，可选参数count指定读取数量',
-    schema: z.object({
-      count: z.number().optional(),
-    }),
-    handler: async ({ count = 5 }) => {
-      try {
-        console.log('gmail_read_latest工具被调用');
-        // TODO: 实现Gmail读取逻辑
-        return {
-          content: [{ type: 'text', text: `已读取最新的 ${count} 封邮件` }],
-        };
-      } catch (error) {
-        console.error('gmail_read_latest工具出错:', error);
-        return {
-          content: [{ type: 'text', text: '读取邮件时出错' }],
-        };
-      }
-    },
-  },
-  {
-    name: 'calendar_create_event',
-    description: '在Google Calendar中创建新事件，需要提供事件标题、开始时间和结束时间',
-    schema: z.object({
-      summary: z.string(),
-      description: z.string().optional(),
-      start: z.string(),
-      end: z.string(),
-    }),
-    handler: async ({ summary, description = '', start, end }) => {
-      try {
-        console.log('calendar_create_event工具被调用');
-        // TODO: 实现Calendar创建事件逻辑
-        return {
-          content: [{ type: 'text', text: `已创建日历事件: ${summary}` }],
-        };
-      } catch (error) {
-        console.error('calendar_create_event工具出错:', error);
-        return {
-          content: [{ type: 'text', text: '创建日历事件时出错' }],
-        };
-      }
-    },
-  },
-  {
-    name: 'calendar_list_events',
-    description: '读取Google Calendar中的事件，可选参数days指定读取未来几天的事件',
-    schema: z.object({
-      days: z.number().optional(),
-    }),
-    handler: async ({ days = 7 }) => {
-      try {
-        console.log('calendar_list_events工具被调用');
-        // TODO: 实现Calendar读取事件逻辑
-        return {
-          content: [{ type: 'text', text: `已读取未来 ${days} 天的日历事件` }],
-        };
-      } catch (error) {
-        console.error('calendar_list_events工具出错:', error);
-        return {
-          content: [{ type: 'text', text: '读取日历事件时出错' }],
-        };
-      }
-    },
-  },
-];
+class MyMCP {
+  private googleService: GoogleService;
+  private serverName: string;
+  private version: string;
 
-// MCP服务器路由
-app.post('/mcp', async (c) => {
-  try {
-    const body = await c.req.json();
-    const { tool: toolName, parameters } = body;
+  constructor(name: string, version: string) {
+    this.serverName = name;
+    this.version = version;
+    this.googleService = new GoogleService();
+  }
 
-    const tool = tools.find((t) => t.name === toolName);
-    if (!tool) {
-      return c.json({ error: '工具不存在' }, 404);
+  async handleRequest(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    if (pathname.startsWith('/oauth')) {
+      return this.handleOAuth(request);
+    }
+
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
     }
 
     try {
-      const validatedParams = tool.schema.parse(parameters);
-      const result = await tool.handler(validatedParams);
-      return c.json(result);
+      const body = await request.json() as RequestBody;
+      const result = await this.executeToolCall(body.tool, body.params);
+      return new Response(JSON.stringify({ result }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return c.json({ error: '参数验证失败', details: error.errors }, 400);
-      }
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return new Response(JSON.stringify({ error: errorMessage }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-  } catch (error) {
-    console.error('MCP服务器错误:', error);
-    return c.json({ error: '服务器内部错误' }, 500);
   }
-});
 
-// 工具列表路由
-app.get('/tools', (c) => {
-  const toolList = tools.map(({ name, description, schema }) => ({
-    name,
-    description,
-    parameters: schema.description,
-  }));
-  return c.json(toolList);
-});
+  private async executeToolCall(tool: string, params: unknown) {
+    switch (tool) {
+      case 'add':
+        const addParams = AddParamsSchema.parse(params);
+        return addParams.a + addParams.b;
 
-// 健康检查路由
-app.get('/health', (c) => {
-  return c.json({ status: 'ok' });
-});
+      case 'name':
+        return this.serverName;
+
+      case 'cloudflarePromise':
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve('Hello from Cloudflare Worker!');
+          }, 1000);
+        });
+
+      case 'gmailSend':
+        const gmailParams = GmailSendParamsSchema.parse(params);
+        return await this.googleService.sendEmail(
+          gmailParams.to,
+          gmailParams.subject,
+          gmailParams.message
+        );
+
+      case 'gmailRead':
+        const readParams = GmailReadParamsSchema.parse(params);
+        return await this.googleService.readLatestEmails(readParams.count);
+
+      case 'calendarCreate':
+        const calendarParams = CalendarCreateParamsSchema.parse(params);
+        return await this.googleService.createCalendarEvent(
+          calendarParams.summary,
+          calendarParams.description,
+          calendarParams.start,
+          calendarParams.end
+        );
+
+      case 'calendarList':
+        const listParams = CalendarListParamsSchema.parse(params);
+        return await this.googleService.listCalendarEvents(listParams.days);
+
+      default:
+        throw new Error(`Unknown tool: ${tool}`);
+    }
+  }
+
+  private async handleOAuth(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    if (pathname === '/oauth/gmail/callback') {
+      const code = url.searchParams.get('code');
+      if (!code) {
+        return new Response('Missing code parameter', { status: 400 });
+      }
+      const tokens = await this.googleService.getToken(code);
+      return new Response(JSON.stringify({ tokens }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (pathname === '/oauth/gmail') {
+      const authUrl = this.googleService.getAuthUrl();
+      return Response.redirect(authUrl, 302);
+    }
+
+    return new Response('Not found', { status: 404 });
+  }
+}
+
+const mcp = new MyMCP('Demo', '1.0.0');
 
 export default {
-  fetch: app.fetch,
+  fetch: (request: Request) => mcp.handleRequest(request),
 };
