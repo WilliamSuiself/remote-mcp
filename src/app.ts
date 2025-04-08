@@ -10,9 +10,12 @@ import {
 } from "./utils.js";
 import { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 
-export type Bindings = Env & {
+export interface Bindings extends Record<string, unknown> {
 	OAUTH_PROVIDER: OAuthHelpers;
-};
+	ASSETS: {
+		fetch: (request: Request) => Promise<Response>;
+	};
+}
 
 const app = new Hono<{
 	Bindings: Bindings;
@@ -33,11 +36,7 @@ app.get("/authorize", async (c) => {
 	// const isLoggedIn = false;
 	const isLoggedIn = true;
 
-	if (!c.env || !c.env.OAUTH_PROVIDER) {
-		return c.text('OAUTH_PROVIDER not available', 500);
-	}
-
-	const oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
+	const oauthReqInfo = await (c.env.OAUTH_PROVIDER as OAuthHelpers).parseAuthRequest(c.req.raw);
 
 	const oauthScopes = [
 		{
@@ -69,10 +68,6 @@ app.post("/approve", async (c) => {
 		return c.html("INVALID LOGIN", 401);
 	}
 
-	if (!c.env || !c.env.OAUTH_PROVIDER) {
-		return c.text('OAUTH_PROVIDER not available', 500);
-	}
-
 	// If the user needs to both login and approve, we should validate the login first
 	if (action === "login_approve") {
 		// We'll allow any values for email and password for this demo
@@ -92,7 +87,7 @@ app.post("/approve", async (c) => {
 
 	// The user must be successfully logged in and have approved the scopes, so we
 	// can complete the authorization request
-	const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
+	const { redirectTo } = await (c.env.OAUTH_PROVIDER as OAuthHelpers).completeAuthorization({
 		request: oauthReqInfo,
 		userId: email,
 		metadata: {
