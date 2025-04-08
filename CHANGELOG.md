@@ -11,6 +11,7 @@
 - 创建了详细的README.md文档
 - 添加了CHANGELOG.md用于记录变更历史
 - 改进了构建脚本，添加了更好的错误处理和路径检查
+- 为GoogleService添加了降级机制，在OAuth未配置时提供模拟数据
 
 ### 修复
 - 修复了TypeScript类型错误，确保工具定义符合类型要求
@@ -19,6 +20,7 @@
 - 修复了构建脚本，确保正确生成dist/index.js文件
 - 更新了wrangler配置，指定正确的入口文件路径
 - 修复了TypeScript配置中的`noEmit: true`设置，将其改为`false`以允许生成编译后的JS文件
+- 暂时禁用了KV命名空间配置，解决了部署错误
 
 ### 更改
 - 将McpAgent替换为McpServer作为MyMCP类的父类
