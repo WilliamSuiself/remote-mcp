@@ -35,8 +35,18 @@ type GmailReadParams = z.infer<typeof GmailReadParamsSchema>;
 type CalendarCreateParams = z.infer<typeof CalendarCreateParamsSchema>;
 type CalendarListParams = z.infer<typeof CalendarListParamsSchema>;
 
+// 工具定义接口
+interface Tool {
+  name: string;
+  description: string;
+  schema: z.ZodType<any>;
+  handler: (params: any) => Promise<any>;
+}
+
+// MCP服务器实现
 export class MyMCP {
 	private googleService: GoogleService;
+	private tools: Map<string, Tool>;
 	private name: string;
 	private version: string;
 	
@@ -47,10 +57,120 @@ export class MyMCP {
 		this.name = APP_CONFIG.serverName;
 		this.version = APP_CONFIG.serverVersion;
 		this.googleService = new GoogleService();
+		this.tools = new Map();
 		
 		if (state) {
 			this.state = state;
 		}
+		
+		// 注册工具
+		this.registerTools();
+	}
+	
+	// 注册工具
+	private registerTool(tool: Tool) {
+	  this.tools.set(tool.name, tool);
+	}
+	
+	// 注册所有工具
+	private registerTools() {
+		// 添加工具
+		this.registerTool({
+		  name: 'add',
+		  description: '将两个数字相加',
+		  schema: AddParamsSchema,
+		  handler: async (params: AddParams) => {
+		    return params.a + params.b;
+		  }
+		});
+		
+		this.registerTool({
+		  name: 'name',
+		  description: '获取服务器名称',
+		  schema: z.object({}),
+		  handler: async () => {
+		    return this.name;
+		  }
+		});
+		
+		this.registerTool({
+		  name: 'cloudflarePromise',
+		  description: '异步延迟响应示例',
+		  schema: z.object({}),
+		  handler: async () => {
+		    return new Promise<string>((resolve) => {
+		      setTimeout(() => {
+		        resolve('Hello from Cloudflare Worker!');
+		      }, 1000);
+		    });
+		  }
+		});
+		
+		// Gmail 工具
+		this.registerTool({
+		  name: 'gmailSend',
+		  description: '发送Gmail邮件',
+		  schema: GmailSendParamsSchema,
+		  handler: async (params: GmailSendParams) => {
+		    return this.googleService.sendEmail(
+		      params.to,
+		      params.subject,
+		      params.message
+		    );
+		  }
+		});
+		
+		this.registerTool({
+		  name: 'gmailRead',
+		  description: '读取Gmail邮件',
+		  schema: GmailReadParamsSchema,
+		  handler: async (params: GmailReadParams) => {
+		    return this.googleService.readLatestEmails(params.count);
+		  }
+		});
+		
+		// 日历工具
+		this.registerTool({
+		  name: 'calendarCreate',
+		  description: '创建Google日历事件',
+		  schema: CalendarCreateParamsSchema,
+		  handler: async (params: CalendarCreateParams) => {
+		    return this.googleService.createCalendarEvent(
+		      params.summary,
+		      params.description,
+		      params.start,
+		      params.end
+		    );
+		  }
+		});
+		
+		this.registerTool({
+		  name: 'calendarList',
+		  description: '列出Google日历事件',
+		  schema: CalendarListParamsSchema,
+		  handler: async (params: CalendarListParams) => {
+		    return this.googleService.listCalendarEvents(params.days);
+		  }
+		});
+	}
+	
+	// 获取工具列表
+	getTools(): Tool[] {
+	  return Array.from(this.tools.values());
+	}
+	
+	// 执行工具调用
+	async executeToolCall(name: string, params: unknown) {
+	  const tool = this.tools.get(name);
+	  if (!tool) {
+	    throw new Error(`未知工具: ${name}`);
+	  }
+	  
+	  // 验证参数
+	  const validatedParams = tool.schema.parse(params);
+	  
+	  // 执行处理程序
+	  return await tool.handler(validatedParams);
 	}
 
 	async handleRequest(request: Request): Promise<Response> {
@@ -71,6 +191,8 @@ export class MyMCP {
 			try {
 				const body = await request.json() as { name: string, params: unknown };
 				const result = await this.executeToolCall(body.name, body.params);
+				
+				// 格式化响应
 				return new Response(JSON.stringify({ result }), {
 					headers: { 'Content-Type': 'application/json' },
 				});
@@ -83,11 +205,25 @@ export class MyMCP {
 			}
 		}
 
+		// 处理工具列表API请求
+		if (pathname === API_PATHS.toolsEndpoint) {
+		  const tools = this.getTools().map(tool => ({
+		    name: tool.name,
+		    description: tool.description
+		  }));
+		  
+		  return new Response(JSON.stringify({ tools }), {
+		    headers: { 'Content-Type': 'application/json' },
+		  });
+		}
+
 		// 默认返回工具列表页面
 		return this.renderHomePage();
 	}
 
 	private renderHomePage(): Response {
+		const tools = this.getTools();
+		
 		return new Response(
 			`<!DOCTYPE html>
 			<html lang="zh-CN">
@@ -156,40 +292,12 @@ export class MyMCP {
 					
 					<h2>可用工具:</h2>
 					
+					${tools.map(tool => `
 					<div class="tool">
-						<h3>add</h3>
-						<p>将两个数字相加</p>
+						<h3>${tool.name}</h3>
+						<p>${tool.description}</p>
 					</div>
-					
-					<div class="tool">
-						<h3>name</h3>
-						<p>获取服务器名称</p>
-					</div>
-					
-					<div class="tool">
-						<h3>cloudflarePromise</h3>
-						<p>异步延迟响应示例</p>
-					</div>
-					
-					<div class="tool">
-						<h3>gmailSend</h3>
-						<p>发送Gmail邮件</p>
-					</div>
-					
-					<div class="tool">
-						<h3>gmailRead</h3>
-						<p>读取Gmail邮件</p>
-					</div>
-					
-					<div class="tool">
-						<h3>calendarCreate</h3>
-						<p>创建Google日历事件</p>
-					</div>
-					
-					<div class="tool">
-						<h3>calendarList</h3>
-						<p>列出Google日历事件</p>
-					</div>
+					`).join('')}
 					
 					<footer>
 						&copy; ${new Date().getFullYear()} - 基于Cloudflare Worker构建
@@ -200,52 +308,6 @@ export class MyMCP {
 				headers: { 'Content-Type': 'text/html; charset=UTF-8' },
 			}
 		);
-	}
-
-	private async executeToolCall(name: string, params: unknown) {
-		switch (name) {
-			case 'add':
-				const addParams = AddParamsSchema.parse(params);
-				return addParams.a + addParams.b;
-
-			case 'name':
-				return this.name;
-
-			case 'cloudflarePromise':
-				return new Promise<string>((resolve) => {
-					setTimeout(() => {
-						resolve('Hello from Cloudflare Worker!');
-					}, 1000);
-				});
-
-			case 'gmailSend':
-				const gmailParams = GmailSendParamsSchema.parse(params);
-				return this.googleService.sendEmail(
-					gmailParams.to,
-					gmailParams.subject,
-					gmailParams.message
-				);
-
-			case 'gmailRead':
-				const readParams = GmailReadParamsSchema.parse(params);
-				return this.googleService.readLatestEmails(readParams.count);
-
-			case 'calendarCreate':
-				const calendarParams = CalendarCreateParamsSchema.parse(params);
-				return this.googleService.createCalendarEvent(
-					calendarParams.summary,
-					calendarParams.description,
-					calendarParams.start,
-					calendarParams.end
-				);
-
-			case 'calendarList':
-				const listParams = CalendarListParamsSchema.parse(params);
-				return this.googleService.listCalendarEvents(listParams.days);
-
-			default:
-				throw new Error(`Unknown tool: ${name}`);
-		}
 	}
 
 	private async handleOAuth(request: Request): Promise<Response> {
@@ -277,6 +339,22 @@ export class MyMCP {
 	}
 }
 
+// 创建OAuth配置
+const oauthConfig = {
+	gmail: {
+		scopes: [
+			'https://www.googleapis.com/auth/gmail.send',
+			'https://www.googleapis.com/auth/gmail.readonly'
+		]
+	},
+	calendar: {
+		scopes: [
+			'https://www.googleapis.com/auth/calendar',
+			'https://www.googleapis.com/auth/calendar.events'
+		]
+	}
+};
+
 // 导出Worker默认处理函数
 export default {
 	fetch: (request: Request, env: any, ctx: any) => {
@@ -287,4 +365,6 @@ export default {
 		// 将请求转发到Durable Object
 		return mcpObject.fetch(request);
 	},
+	// 导出OAuth配置
+	googleOAuth: oauthConfig
 };
