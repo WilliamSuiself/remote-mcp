@@ -4,13 +4,13 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
+		"deploy": "npm run build && wrangler deploy",
+		"dev": "npm run build && wrangler dev",
 		"format": "biome format --write",
 		"lint:fix": "biome lint --fix",
 		"start": "wrangler dev",
 		"cf-typegen": "wrangler types",
-		"build": "tsc && node build.js"
+		"build": "node build.js"
 	},
 	"devDependencies": {
 		"@types/marked": "^5.0.2",
