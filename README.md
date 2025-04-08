@@ -1,85 +1,171 @@
-# Remote MCP
+# Remote MCP Server
 
-Remote MCP 是一个基于 Cloudflare Workers 的远程控制面板服务。
+这是一个基于Cloudflare Worker的MCP (Model Context Protocol) 服务器，用于提供各种工具API，包括Gmail、Google Calendar等功能。该项目使用TypeScript开发，并使用Cloudflare Durable Objects实现状态持久化。
 
-## 功能特点
+## 功能特性
 
-- 基于 Cloudflare Workers 构建
-- 支持 Google OAuth2.0 认证
-- 提供 API 接口服务
-- 支持跨域请求
-- 集成 Gmail 发送和读取功能
-- 集成 Google Calendar 事件创建和列表查询功能
+- **基础工具**：
+  - 简单的数学计算功能
+  - 服务器信息查询
+  - 异步Promise示例
 
-## MCP工具
+- **Google服务集成**：
+  - Gmail邮件发送与读取
+  - Google Calendar事件创建与列表查询
 
-本服务提供以下MCP工具：
+- **OAuth认证**：
+  - 支持Google OAuth 2.0认证流程
+  - 通过Cloudflare Worker处理OAuth回调
+  
+- **Durable Objects**:
+  - 使用Cloudflare Durable Objects存储状态
+  - 支持多实例无缝扩展
 
-1. **基础工具**
-   - `add` - 简单的加法运算
-   - `name` - 获取服务器名称
-   - `cloudflarePromise` - 测试Cloudflare异步功能
+## 项目结构
 
-2. **Gmail工具**
-   - `gmailSend` - 发送Gmail邮件
-   - `gmailRead` - 读取最新的Gmail邮件
-
-3. **Calendar工具**
-   - `calendarCreate` - 创建Google Calendar事件
-   - `calendarList` - 列出Google Calendar事件
-
-## 快速开始
-
-1. 克隆仓库：
-```bash
-git clone https://github.com/WilliamSuiself/remote-mcp.git
-cd remote-mcp
+```
+remote-mcp-server/
+├── src/
+│   ├── index.ts        # 主入口文件，定义MCP服务和工具实现
+│   ├── app.ts          # Hono应用实现，处理OAuth认证流程
+│   ├── config.ts       # 配置文件，包含OAuth和应用配置
+│   ├── types.d.ts      # 类型定义文件
+│   ├── utils.ts        # 工具函数
+│   └── services/
+│       └── google.ts   # Google服务实现
+├── static/             # 静态资源文件
+├── dist/               # 编译输出目录
+├── tsconfig.json       # TypeScript配置
+├── wrangler.jsonc      # Cloudflare Worker配置
+└── package.json        # 项目依赖
 ```
 
-2. 安装依赖：
+## 环境要求
+
+- Node.js 18+
+- Cloudflare账户
+- Wrangler CLI (`npm install -g wrangler`)
+- Google Cloud项目和API凭证
+
+## 安装与设置
+
+1. **克隆仓库并安装依赖**
+
 ```bash
+git clone https://github.com/WilliamSuiself/remote-mcp-server.git
+cd remote-mcp-server
 npm install
 ```
 
-3. 本地开发：
+2. **配置环境变量**
+
+在Cloudflare Worker中设置以下环境变量：
+
+- `GOOGLE_CLIENT_ID`: Google OAuth客户端ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth客户端密钥
+- `GOOGLE_REDIRECT_URI`: OAuth重定向URI (默认: `http://localhost:8787/oauth/gmail/callback`)
+- `SERVER_NAME`: 服务器名称 (可选)
+- `SERVER_VERSION`: 服务器版本 (可选)
+
+3. **创建KV命名空间**
+
+```bash
+wrangler kv:namespace create OAUTH_KV
+```
+
+然后将生成的ID复制到`wrangler.jsonc`文件中。
+
+4. **开发模式**
+
 ```bash
 npm run dev
 ```
 
-4. 构建部署：
+5. **部署**
+
 ```bash
-npm run build
 npm run deploy
 ```
 
-## 环境变量
+## 使用指南
 
-项目需要以下环境变量：
+### 工具API
 
-- `GOOGLE_CLIENT_ID`: Google OAuth 客户端 ID
-- `GOOGLE_CLIENT_SECRET`: Google OAuth 客户端密钥
-- `GOOGLE_REDIRECT_URI`: OAuth 回调 URL
+该服务器提供以下工具API:
 
-## OAuth2.0认证流程
+1. **add** - 将两个数字相加
+   - 参数: `a`, `b` (数字)
+   - 返回: 计算结果
 
-1. 重定向用户到 `/oauth/gmail` 进行授权
-2. 用户确认后会被重定向到 `/oauth/gmail/callback?code=xxxx`
-3. 系统处理授权码并获取访问令牌
-4. 使用访问令牌调用Gmail和Calendar API
+2. **name** - 返回服务器名称
+   - 无参数
+   - 返回: 服务器名称字符串
 
-## 技术栈
+3. **cloudflarePromise** - 异步延迟响应示例
+   - 无参数
+   - 返回: 延迟消息
 
-- Cloudflare Workers
-- TypeScript
-- Zod 类型验证
-- Google OAuth2.0
-- Google Gmail API
-- Google Calendar API
+4. **gmailSend** - 发送Gmail邮件
+   - 参数: `to`, `subject`, `message`
+   - 返回: 发送结果
+
+5. **gmailRead** - 读取Gmail邮件
+   - 参数: `count` (可选，默认5)
+   - 返回: 邮件列表
+
+6. **calendarCreate** - 创建日历事件
+   - 参数: `summary`, `description`, `start`, `end`
+   - 返回: 创建的事件信息
+
+7. **calendarList** - 列出日历事件
+   - 参数: `days` (可选，默认7)
+   - 返回: 事件列表
+
+### OAuth认证
+
+要使用Google服务，用户需要完成OAuth认证流程：
+
+1. 访问 `/oauth/gmail` 端点
+2. 授权应用访问Gmail
+3. 重定向至回调URL处理认证
+
+### API请求示例
+
+```javascript
+// 发送邮件示例
+fetch('https://your-worker.workers.dev/api/mcp', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'gmailSend',
+    params: {
+      to: 'recipient@example.com',
+      subject: 'Test Email',
+      message: 'Hello from Remote MCP!'
+    }
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+## 开发注意事项
+
+- 使用 `npm run build` 编译项目
+- TypeScript编译输出位于 `dist/` 目录
+- 使用 `npm run lint:fix` 修复代码格式问题
+- 所有导入的模块路径应该包含`.js`扩展名，以支持ESM
 
 ## 贡献指南
 
-欢迎提交 Issue 和 Pull Request！
+欢迎提交Pull Request或Issue来改进此项目。请确保您的代码通过了格式检查并遵循项目的编码规范。
 
 ## 许可证
 
-MIT License
+MIT
+
+---
+
+**注意**: 在使用Google API之前，确保您已在Google Cloud Console中创建了项目并启用了相应的API。
