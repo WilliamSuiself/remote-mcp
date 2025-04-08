@@ -21,6 +21,7 @@
 - 更新了wrangler配置，指定正确的入口文件路径
 - 修复了TypeScript配置中的`noEmit: true`设置，将其改为`false`以允许生成编译后的JS文件
 - 暂时禁用了KV命名空间配置，解决了部署错误
+- 修复了GoogleService中的正则表达式转义错误，修正了换行符问题
 
 ### 更改
 - 将McpAgent替换为McpServer作为MyMCP类的父类
