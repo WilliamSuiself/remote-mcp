@@ -43,6 +43,28 @@ interface Tool {
   handler: (params: any) => Promise<any>;
 }
 
+interface Env {
+  ASSETS: {
+    fetch: (request: Request) => Promise<Response>;
+  };
+  MCP_OBJECT: {
+    idFromName: (name: string) => DurableObjectId;
+    get: (id: DurableObjectId) => DurableObjectStub;
+  };
+}
+
+// 导出Worker默认处理函数
+export default {
+  fetch: (request: Request, env: Env, ctx: any) => {
+    // 创建或获取Durable Object实例
+    const id = env.MCP_OBJECT.idFromName('default');
+    const mcpObject = env.MCP_OBJECT.get(id);
+
+    // 将请求转发到Durable Object
+    return mcpObject.fetch(request);
+  },
+};
+
 // MCP服务器实现
 export class MyMCP {
 	private googleService: GoogleService;
