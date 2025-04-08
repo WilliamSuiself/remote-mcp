@@ -7,8 +7,8 @@ import {
 	renderAuthorizationApprovedContent,
 	renderLoggedInAuthorizeScreen,
 	renderLoggedOutAuthorizeScreen,
-} from "./utils";
-import type { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
+} from "./utils.js";
+import { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 
 export type Bindings = Env & {
 	OAUTH_PROVIDER: OAuthHelpers;
@@ -32,6 +32,10 @@ app.get("/authorize", async (c) => {
 	// hard-code whether the user is logged in or not. We'll default to true
 	// const isLoggedIn = false;
 	const isLoggedIn = true;
+
+	if (!c.env || !c.env.OAUTH_PROVIDER) {
+		return c.text('OAUTH_PROVIDER not available', 500);
+	}
 
 	const oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
 
@@ -63,6 +67,10 @@ app.post("/approve", async (c) => {
 
 	if (!oauthReqInfo) {
 		return c.html("INVALID LOGIN", 401);
+	}
+
+	if (!c.env || !c.env.OAUTH_PROVIDER) {
+		return c.text('OAUTH_PROVIDER not available', 500);
 	}
 
 	// If the user needs to both login and approve, we should validate the login first
