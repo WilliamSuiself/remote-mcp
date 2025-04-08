@@ -76,7 +76,7 @@ export class GoogleService {
     /**
      * 读取最新的 Gmail 邮件
      */
-    async readLatestEmails(count: number = 5) {
+    async readLatestEmails(count: number = 10) {
         const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
         
         try {
