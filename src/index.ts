@@ -219,56 +219,75 @@ export class MyMCP {
 
 		// 处理SSE连接请求
 		if (pathname === '/sse') {
-			// 设置CORS头部
-			const headers = {
+			// 设置正确的 CORS 和 SSE 头部
+			const headers = new Headers({
 				'Content-Type': 'text/event-stream',
 				'Cache-Control': 'no-cache',
 				'Connection': 'keep-alive',
 				'Access-Control-Allow-Origin': '*',
 				'Access-Control-Allow-Methods': 'GET, OPTIONS',
-				'Access-Control-Allow-Headers': '*'
-			};
+				'Access-Control-Allow-Headers': '*',
+				'Access-Control-Max-Age': '86400',
+			});
 
 			// 处理预检请求
 			if (request.method === 'OPTIONS') {
 				return new Response(null, { headers });
 			}
 
-			const stream = new TransformStream();
-			const writer = stream.writable.getWriter();
-			const encoder = new TextEncoder();
-
 			try {
-				// 发送初始连接消息
-				await writer.write(encoder.encode('event: connected\ndata: {"status":"connected"}\n\n'));
+				const stream = new TransformStream();
+				const writer = stream.writable.getWriter();
+				const encoder = new TextEncoder();
 
-				// 保持连接活跃
-				const keepAlive = setInterval(async () => {
+				// 发送初始连接消息
+				const initialMessage = {
+					type: 'connection',
+					status: 'connected',
+					server: this.name,
+					version: this.version,
+					tools: this.listTools()
+				};
+				
+				await writer.write(
+					encoder.encode(`event: connected\ndata: ${JSON.stringify(initialMessage)}\n\n`)
+				);
+
+				// 设置心跳检测
+				const heartbeat = setInterval(async () => {
 					try {
-						await writer.write(encoder.encode('event: ping\ndata: {"timestamp":"' + Date.now() + '"}\n\n'));
-					} catch (e) {
-						console.error('SSE写入错误:', e);
-						clearInterval(keepAlive);
+						await writer.write(
+							encoder.encode(`event: ping\ndata: ${JSON.stringify({ timestamp: Date.now() })}\n\n`)
+						);
+					} catch (error) {
+						console.error('Heartbeat error:', error);
+						clearInterval(heartbeat);
 						writer.close().catch(console.error);
 					}
-				}, 30000);
+				}, 15000); // 每15秒发送一次心跳
 
 				// 监听连接关闭
 				request.signal.addEventListener('abort', () => {
-					clearInterval(keepAlive);
+					clearInterval(heartbeat);
 					writer.close().catch(console.error);
 				});
 
-				return new Response(stream.readable, { headers });
-			} catch (error) {
-				console.error('SSE设置错误:', error);
-				return new Response(JSON.stringify({ error: 'SSE连接失败' }), {
-					status: 500,
-					headers: {
-						'Content-Type': 'application/json',
-						'Access-Control-Allow-Origin': '*'
-					}
+				return new Response(stream.readable, {
+					headers,
+					status: 200
 				});
+			} catch (error) {
+				console.error('SSE setup error:', error);
+				return new Response(
+					JSON.stringify({ error: 'Failed to establish SSE connection' }), 
+					{
+						status: 500,
+						headers: {
+							'Content-Type': 'application/json',
+							'Access-Control-Allow-Origin': '*'
+						}
+					}
+				);
 			}
 		}
 
@@ -391,6 +410,14 @@ export class MyMCP {
 	// Cloudflare Worker处理请求的入口点
 	async fetch(request: Request): Promise<Response> {
 		return this.handleRequest(request);
+	}
+
+	private listTools() {
+		return Array.from(this.tools.values()).map(tool => ({
+			name: tool.name,
+			description: tool.description,
+			parameters: tool.parameters
+		}));
 	}
 }
 
