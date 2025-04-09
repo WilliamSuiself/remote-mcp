@@ -40,6 +40,7 @@ interface Tool {
 	name: string;
 	description: string;
 	schema: z.ZodType<any>;
+	parameters: z.ZodType<any>;
 	handler: (params: any) => Promise<any>;
 }
 
@@ -79,6 +80,7 @@ export class MyMCP {
 			name: 'add',
 			description: '将两个数字相加',
 			schema: AddParamsSchema,
+			parameters: AddParamsSchema,
 			handler: async (params: AddParams) => {
 				return params.a + params.b;
 			}
@@ -88,6 +90,7 @@ export class MyMCP {
 			name: 'name',
 			description: '获取服务器名称',
 			schema: z.object({}),
+			parameters: z.object({}),
 			handler: async () => {
 				return this.name;
 			}
@@ -97,6 +100,7 @@ export class MyMCP {
 			name: 'cloudflarePromise',
 			description: '异步延迟响应示例',
 			schema: z.object({}),
+			parameters: z.object({}),
 			handler: async () => {
 				return new Promise<string>((resolve) => {
 					setTimeout(() => {
@@ -111,6 +115,7 @@ export class MyMCP {
 			name: 'gmailSend',
 			description: '发送Gmail邮件',
 			schema: GmailSendParamsSchema,
+			parameters: GmailSendParamsSchema,
 			handler: async (params: GmailSendParams) => {
 				return this.googleService.sendEmail(
 					params.to,
@@ -124,6 +129,7 @@ export class MyMCP {
 			name: 'gmailRead',
 			description: '读取Gmail邮件',
 			schema: GmailReadParamsSchema,
+			parameters: GmailReadParamsSchema,
 			handler: async (params: GmailReadParams) => {
 				return this.googleService.readLatestEmails(params.count);
 			}
@@ -134,6 +140,7 @@ export class MyMCP {
 			name: 'calendarCreate',
 			description: '创建Google日历事件',
 			schema: CalendarCreateParamsSchema,
+			parameters: CalendarCreateParamsSchema,
 			handler: async (params: CalendarCreateParams) => {
 				return this.googleService.createCalendarEvent(
 					params.summary,
@@ -148,6 +155,7 @@ export class MyMCP {
 			name: 'calendarList',
 			description: '列出Google日历事件',
 			schema: CalendarListParamsSchema,
+			parameters: CalendarListParamsSchema,
 			handler: async (params: CalendarListParams) => {
 				return this.googleService.listCalendarEvents(params.days);
 			}
