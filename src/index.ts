@@ -217,6 +217,61 @@ export class MyMCP {
 			});
 		}
 
+		// 处理SSE连接请求
+		if (pathname === '/sse') {
+			// 设置CORS头部
+			const headers = {
+				'Content-Type': 'text/event-stream',
+				'Cache-Control': 'no-cache',
+				'Connection': 'keep-alive',
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'GET, OPTIONS',
+				'Access-Control-Allow-Headers': '*'
+			};
+
+			// 处理预检请求
+			if (request.method === 'OPTIONS') {
+				return new Response(null, { headers });
+			}
+
+			const stream = new TransformStream();
+			const writer = stream.writable.getWriter();
+			const encoder = new TextEncoder();
+
+			try {
+				// 发送初始连接消息
+				await writer.write(encoder.encode('event: connected\ndata: {"status":"connected"}\n\n'));
+
+				// 保持连接活跃
+				const keepAlive = setInterval(async () => {
+					try {
+						await writer.write(encoder.encode('event: ping\ndata: {"timestamp":"' + Date.now() + '"}\n\n'));
+					} catch (e) {
+						console.error('SSE写入错误:', e);
+						clearInterval(keepAlive);
+						writer.close().catch(console.error);
+					}
+				}, 30000);
+
+				// 监听连接关闭
+				request.signal.addEventListener('abort', () => {
+					clearInterval(keepAlive);
+					writer.close().catch(console.error);
+				});
+
+				return new Response(stream.readable, { headers });
+			} catch (error) {
+				console.error('SSE设置错误:', error);
+				return new Response(JSON.stringify({ error: 'SSE连接失败' }), {
+					status: 500,
+					headers: {
+						'Content-Type': 'application/json',
+						'Access-Control-Allow-Origin': '*'
+					}
+				});
+			}
+		}
+
 		// 默认返回工具列表页面
 		return this.renderHomePage();
 	}
@@ -339,16 +394,6 @@ export class MyMCP {
 	}
 }
 
-interface Env {
-  ASSETS: {
-    fetch: (request: Request) => Promise<Response>;
-  };
-  MCP_OBJECT: {
-    idFromName: (name: string) => DurableObjectId;
-    get: (id: DurableObjectId) => DurableObjectStub;
-  };
-}
-
 // 创建OAuth配置
 const oauthConfig = {
 	gmail: {
@@ -367,7 +412,7 @@ const oauthConfig = {
 
 // 导出Worker默认处理函数
 export default {
-	fetch: (request: Request, env: Env, ctx: any) => {
+	fetch: (request: Request, env: any, ctx: any) => {
 		// 创建或获取Durable Object实例
 		const id = env.MCP_OBJECT.idFromName('default');
 		const mcpObject = env.MCP_OBJECT.get(id);
